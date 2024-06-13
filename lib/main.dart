@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
@@ -57,6 +61,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
+  late Future<Grocery> futureAlbum;
+
   void _incrementCounter() {
     setState(() {
       // This call to setState tells the Flutter framework that something has
@@ -66,6 +72,12 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    futureAlbum = fetchGrocery();
   }
 
   @override
@@ -121,5 +133,52 @@ class _MyHomePageState extends State<MyHomePage> {
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+}
+
+class Grocery {
+  final int id;
+  final String name;
+  final bool bought;
+
+  const Grocery({
+    required this.id,
+    required this.name,
+    required this.bought,
+  });
+
+  factory Grocery.fromJson(Map<String, dynamic> json) {
+    return switch (json) {
+      {
+      'id': int id,
+      'name': String name,
+      'bought': bool bought,
+      } =>
+          Grocery(
+            id: id,
+            name: name,
+            bought: bought
+          ),
+      _ => throw const FormatException('Failed to load grocery.'),
+    };
+  }
+}
+
+Future<Grocery> fetchGrocery() async {
+  final response = await http
+      .get(Uri.parse('http://localhost:3000/groceries'));
+      //.get(Uri.parse('https://jsonplaceholder.typicode.com/albums/2'));
+  log('Getting grocery');
+
+  if (response.statusCode == 200) {
+    log('Got grocery');
+    log(response.body);
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    return Grocery.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    throw Exception('Failed to load grocery');
   }
 }
