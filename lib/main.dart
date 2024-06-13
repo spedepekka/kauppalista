@@ -61,7 +61,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
-  late Future<Grocery> futureAlbum;
+  late Future<List<Grocery>> futureGroceries;
 
   void _incrementCounter() {
     setState(() {
@@ -77,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    futureAlbum = fetchGrocery();
+    futureGroceries = fetchGroceries();
   }
 
   @override
@@ -164,21 +164,18 @@ class Grocery {
   }
 }
 
-Future<Grocery> fetchGrocery() async {
-  final response = await http
-      .get(Uri.parse('http://localhost:3000/groceries'));
-      //.get(Uri.parse('https://jsonplaceholder.typicode.com/albums/2'));
-  log('Getting grocery');
+Future<List<Grocery>> fetchGroceries() async {
+  final response = await http.get(Uri.parse('http://localhost:3000/groceries'));
 
   if (response.statusCode == 200) {
-    log('Got grocery');
-    log(response.body);
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-    return Grocery.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    log('Response body ${response.body}');
+    Iterable iter = jsonDecode(response.body);
+    List<Grocery> groceries = List<Grocery>.from(iter.map((model) => Grocery.fromJson(model)));
+    for (final Grocery gr in groceries) {
+      log('Grocery: ${gr.name}');
+    }
+    return groceries;
   } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
-    throw Exception('Failed to load grocery');
+    throw Exception('Failed to load groceries');
   }
 }
